@@ -1,87 +1,80 @@
-import os, shutil, psutil, zipfile, datetime, uuid
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
-from fastapi.responses import HTMLResponse
+import os, shutil, psutil, datetime, uuid, requests
+from fastapi import FastAPI, UploadFile, File, Response, Cookie, Depends, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List
 import logging
 
-app = FastAPI(title="Zenith Core OS")
+app = FastAPI()
 
-# Настройка логирования в файл
-logging.basicConfig(filename='system.log', level=logging.INFO, 
-                    format='%(asctime)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-
+# Разрешаем сайту работать в браузере
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# Имитация БД (в продакшене заменим на SQLite/PostgreSQL)
-class User(BaseModel):
-    id: str = None
-    username: str
-    role: str
+# --- НАСТРОЙКИ ---
+ADMIN_USER = "admin"
+ADMIN_PASS = "12345" # ОБЯЗАТЕЛЬНО ЗАПОМНИ: логин admin, пароль 12345
+SESSION_ID = "zenith_secret_token_777"
+GALLERY_FILE = "gallery_links.txt"
 
-users_db = [{"id": "1", "username": "admin", "role": "owner"}]
-MODULES_DIR = "./modules"
-if not os.path.exists(MODULES_DIR): os.makedirs(MODULES_DIR)
+logging.basicConfig(filename='system.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
-def log_event(text):
-    logging.info(text)
+# Проверка: залогинен ли пользователь?
+async def is_logged_in(session: str = Cookie(None)):
+    return session == SESSION_ID
 
-# --- API: МОНИТОРИНГ ---
+# --- АВТОРИЗАЦИЯ ---
+@app.post("/api/login")
+async def login(data: dict, response: Response):
+    if data.get("username") == ADMIN_USER and data.get("password") == ADMIN_PASS:
+        response.set_cookie(key="session", value=SESSION_ID, httponly=True)
+        return {"status": "ok"}
+    raise HTTPException(status_code=401, detail="Неверный пароль")
+
+@app.get("/api/logout")
+async def logout(response: Response):
+    response.delete_cookie("session")
+    return RedirectResponse(url="/")
+
+# --- СТАТИСТИКА И ЛОГИ ---
 @app.get("/api/stats")
 async def get_stats():
     return {
-        "cpu": psutil.cpu_percent(interval=None),
+        "cpu": psutil.cpu_percent(),
         "ram": psutil.virtual_memory().percent,
         "disk": psutil.disk_usage('/').percent,
-        "net": f"{psutil.net_io_counters().bytes_sent // 1024} KB/s"
+        "net": "Active"
     }
 
-# --- API: ПОЛЬЗОВАТЕЛИ ---
-@app.get("/api/users")
-async def get_users():
-    return users_db
-
-@app.post("/api/users")
-async def create_user(user: User):
-    user.id = str(uuid.uuid4())[:8]
-    users_db.append(user.dict())
-    log_event(f"Пользователь {user.username} создан")
-    return user
-
-@app.delete("/api/users/{user_id}")
-async def delete_user(user_id: str):
-    global users_db
-    users_db = [u for u in users_db if u['id'] != user_id]
-    log_event(f"Пользователь {user_id} удален")
-    return {"status": "deleted"}
-
-# --- API: ЛОГИ ---
 @app.get("/api/logs")
 async def get_logs():
     if not os.path.exists('system.log'): return []
     with open('system.log', 'r') as f:
-        lines = f.readlines()
-    return [{"entry": line.strip()} for line in lines[-50:]] # последние 50 записей
+        return [{"entry": line.strip()} for line in f.readlines()[-20:]]
 
-# --- API: МОДУЛИ ---
-@app.post("/api/modules/upload")
-async def upload_module(file: UploadFile = File(...)):
-    path = os.path.join(MODULES_DIR, file.filename)
-    with open(path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    if file.filename.endswith('.zip'):
-        with zipfile.ZipFile(path, 'r') as zip_ref:
-            module_name = file.filename.replace('.zip', '')
-            extract_path = os.path.join(MODULES_DIR, module_name)
-            zip_ref.extractall(extract_path)
-        os.remove(path)
-        log_event(f"Модуль {module_name} установлен из ZIP")
-    return {"status": "installed"}
+# --- МОДУЛЬ: ФОТООБМЕННИК ---
+@app.post("/api/photos/upload")
+async def upload_photo(file: UploadFile = File(...)):
+    # Отправляем файл на анонимный хостинг (Telegra.ph)
+    files = {'file': (file.filename, file.file, file.content_type)}
+    try:
+        resp = requests.post("https://telegra.ph/upload", files=files)
+        img_url = "https://telegra.ph" + resp.json()[0]['src']
+        # Сохраняем ссылку в файл на сервере
+        with open(GALLERY_FILE, "a") as f:
+            f.write(img_url + "\n")
+        logging.info(f"Фото загружено: {img_url}")
+        return {"url": img_url}
+    except:
+        return {"error": "Ошибка загрузки"}
 
-# --- ГЛАВНАЯ СТРАНИЦА ---
+@app.get("/api/photos/list")
+async def list_photos():
+    if not os.path.exists(GALLERY_FILE): return []
+    with open(GALLERY_FILE, "r") as f:
+        return [line.strip() for line in f.readlines()]
+
+# --- СТРАНИЦЫ (ИНТЕРФЕЙС) ---
 @app.get("/", response_class=HTMLResponse)
-async def index():
-    with open("index.html", "r", encoding="utf-8") as f:
+async def index_page(logged_in: bool = Depends(is_logged_in)):
+    file_to_open = "index.html" if logged_in else "login.html"
+    with open(file_to_open, "r", encoding="utf-8") as f:
         return f.read()
