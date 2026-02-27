@@ -7,41 +7,58 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-[#0b0f1a] text-slate-300">
-    <div class="flex h-screen">
+    <div class="flex h-screen overflow-hidden">
         <aside class="w-64 bg-[#111827] border-r border-slate-800 p-6 flex flex-col">
             <div class="text-blue-500 font-bold text-xl mb-10 font-mono italic">ZENITH CORE</div>
             <nav class="space-y-1 flex-1">
-                <button onclick="show('dash')" class="w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-home mr-3"></i>Дашборд</button>
-                <button onclick="show('users')" class="w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-users mr-3"></i>Пользователи</button>
-                <button onclick="show('logs')" class="w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-terminal mr-3"></i>Логи</button>
-                <button onclick="show('settings')" class="w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-cog mr-3"></i>Настройки</button>
-                <div class="border-t border-slate-800 my-4 pt-4 text-[10px] text-slate-500 px-3 uppercase">Модули</div>
+                <button onclick="show('dash')" class="w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-home mr-3 text-blue-400"></i>Дашборд</button>
+                <button onclick="show('users')" class="w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-users mr-3 text-purple-400"></i>Пользователи</button>
+                <button onclick="show('logs')" class="w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-terminal mr-3 text-green-400"></i>Логи</button>
+                <button onclick="show('mod-mgr')" class="w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-tasks mr-3 text-orange-400"></i>Управление модулями</button>
+                <div class="border-t border-slate-800 my-4 pt-4 text-[10px] text-slate-500 px-3 uppercase">Загруженные модули</div>
                 <div id="mod-menu"></div>
             </nav>
-            <button onclick="show('install')" class="mt-4 w-full bg-blue-600 p-3 rounded-lg font-bold">Установить ZIP</button>
+            <button onclick="show('install')" class="mt-4 w-full bg-blue-600/20 text-blue-400 p-3 rounded-lg text-sm font-bold border border-blue-500/30 hover:bg-blue-600 hover:text-white transition">Добавить ZIP</button>
         </aside>
 
         <main class="flex-1 p-10 overflow-auto">
             <div id="view-dash" class="view">
-                <h2 class="text-3xl font-bold mb-8">Система</h2>
-                <div class="grid grid-cols-3 gap-6" id="widgets">
+                <h2 class="text-3xl font-bold mb-8 text-white">Система</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="widgets-box">
                     <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                        <p class="text-slate-500 text-xs uppercase mb-2">Нагрузка</p>
-                        <div class="text-2xl font-mono">CPU: <span id="cpu" class="text-green-400">0%</span></div>
-                        <div class="text-2xl font-mono">RAM: <span id="ram" class="text-blue-400">0%</span></div>
+                        <p class="text-slate-500 text-[10px] uppercase font-bold mb-2">Нагрузка CPU</p>
+                        <p id="cpu" class="text-3xl font-mono text-green-400">0%</p>
                     </div>
                 </div>
             </div>
 
-            <div id="view-users" class="view hidden text-center py-20 text-slate-500">Управление пользователями (База данных активна)</div>
-            <div id="view-logs" class="view hidden text-center py-20 text-slate-500">Логи системы временно пусты</div>
-            <div id="view-settings" class="view hidden text-center py-20 text-slate-500">Настройки ядра v1.0.4</div>
+            <div id="view-users" class="view hidden">
+                <h2 class="text-3xl font-bold mb-8 text-white">Аккаунты</h2>
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                    <table class="w-full text-left">
+                        <thead class="text-slate-500 text-xs uppercase border-b border-slate-800">
+                            <tr><th class="p-3">ID</th><th class="p-3">Логин</th><th class="p-3">Роль</th></tr>
+                        </thead>
+                        <tbody id="user-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-logs" class="view hidden">
+                <h2 class="text-3xl font-bold mb-8 text-white">Журнал событий</h2>
+                <div id="log-content" class="bg-black p-6 rounded-xl font-mono text-green-500 text-sm h-96 overflow-auto border border-slate-800"></div>
+            </div>
+
+            <div id="view-mod-mgr" class="view hidden">
+                <h2 class="text-3xl font-bold mb-8 text-white">Управление модулями</h2>
+                <div id="full-mod-list" class="space-y-4"></div>
+            </div>
 
             <div id="view-install" class="view hidden">
-                <h2 class="text-3xl font-bold mb-8 text-center">Загрузка модуля</h2>
-                <div class="max-w-md mx-auto bg-slate-900 p-10 rounded-3xl border-2 border-dashed border-slate-800 text-center">
-                    <input type="file" id="zip-file" class="mb-6 block w-full text-sm">
-                    <button onclick="install()" class="bg-green-600 w-full py-4 rounded-xl font-bold">УСТАНОВИТЬ</button>
+                <h2 class="text-3xl font-bold mb-8 text-white">Загрузка ZIP</h2>
+                <div class="max-w-md mx-auto bg-slate-900 p-10 rounded-3xl border-2 border-dashed border-slate-700 text-center">
+                    <input type="file" id="zip-in" class="mb-6 block w-full text-sm">
+                    <button onclick="installZip()" class="bg-blue-600 w-full py-4 rounded-xl font-bold">ОТПРАВИТЬ</button>
                 </div>
             </div>
 
@@ -51,36 +68,59 @@
 
     <script>
         async function init() {
+            // Stats Update
             setInterval(async () => {
-                const r = await fetch('/api/stats');
-                const d = await r.json();
-                document.getElementById('cpu').innerText = d.cpu + '%';
-                document.getElementById('ram').innerText = d.ram + '%';
-            }, 2000);
+                try {
+                    const r = await fetch('/api/stats');
+                    const d = await r.json();
+                    document.getElementById('cpu').innerText = d.cpu + '%';
+                } catch(e){}
+            }, 3000);
+            loadData();
+        }
 
-            const res = await fetch('/api/modules/list');
-            const mods = await res.json();
+        async function loadData() {
+            // Load Users
+            const ur = await fetch('/api/users');
+            const users = await ur.json();
+            document.getElementById('user-list').innerHTML = users.map(u => `<tr><td class="p-3">${u.id}</td><td class="p-3">${u.user}</td><td class="p-3 text-blue-400">${u.role}</td></tr>`).join('');
+
+            // Load Logs
+            const lr = await fetch('/api/logs');
+            const logs = await lr.json();
+            document.getElementById('log-content').innerHTML = logs.map(l => `<div>${l.entry}</div>`).join('');
+
+            // Load Modules
+            const mr = await fetch('/api/modules/list');
+            const mods = await mr.json();
             const menu = document.getElementById('mod-menu');
-            const widgets = document.getElementById('widgets');
+            const mgr = document.getElementById('full-mod-list');
+            const wBox = document.getElementById('widgets-box');
 
+            menu.innerHTML = ''; mgr.innerHTML = '';
+            
             mods.forEach(m => {
-                const btn = document.createElement('button');
-                btn.className = "w-full text-left p-3 hover:bg-slate-800 rounded-lg text-slate-400";
-                btn.innerHTML = `<i class="${m.icon} mr-3"></i>${m.name}`;
-                btn.onclick = () => {
-                    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-                    const cont = document.getElementById('mod-container');
-                    cont.classList.remove('hidden');
-                    cont.innerHTML = `<h2 class="text-3xl font-bold mb-8">${m.name}</h2>` + m.main_html;
-                    if(m.script) eval(m.script);
+                // Sidebar button
+                const b = document.createElement('button');
+                b.className = "w-full text-left p-3 hover:bg-slate-800 rounded-lg text-slate-400";
+                b.innerHTML = `<i class="${m.icon} mr-3"></i>${m.name}`;
+                b.onclick = () => {
+                    show('mod-container');
+                    const c = document.getElementById('mod-container');
+                    c.innerHTML = `<h2 class="text-3xl font-bold mb-8 text-white">${m.name}</h2>` + m.main_html;
+                    if(m.script) { try { eval(m.script); } catch(e){ console.error(e); } }
                 };
-                menu.appendChild(btn);
+                menu.appendChild(b);
 
+                // Manager card
+                mgr.innerHTML += `<div class="bg-slate-900 p-4 rounded-xl flex justify-between"><span>${m.name}</span><button onclick="delMod('${m.id}')" class="text-red-500">Удалить</button></div>`;
+
+                // Widget
                 if(m.widget_html) {
                     const w = document.createElement('div');
                     w.className = "bg-slate-900 p-6 rounded-2xl border border-slate-800";
                     w.innerHTML = m.widget_html;
-                    widgets.appendChild(w);
+                    wBox.appendChild(w);
                 }
             });
         }
@@ -88,13 +128,21 @@
         function show(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
             document.getElementById('view-' + id).classList.remove('hidden');
+            if(id === 'logs' || id === 'users') loadData();
         }
 
-        async function install() {
+        async function installZip() {
             const fd = new FormData();
-            fd.append("file", document.getElementById('zip-file').files[0]);
-            await fetch('/api/modules/upload', {method: 'POST', body: fd});
+            fd.append("file", document.getElementById('zip-in').files[0]);
+            await fetch('/api/modules/upload', {method:'POST', body:fd});
             location.reload();
+        }
+
+        async function delMod(id) {
+            if(confirm('Удалить модуль?')) {
+                await fetch('/api/modules/' + id, {method:'DELETE'});
+                location.reload();
+            }
         }
 
         init();
