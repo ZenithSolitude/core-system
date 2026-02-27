@@ -1,0 +1,6 @@
+{
+  "id": "photo-service",
+  "name": "Фотохостинг",
+  "version": "1.0",
+  "widget": "Widget.vue" 
+}
