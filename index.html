@@ -2,139 +2,93 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zenith Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-[#0f172a] text-slate-200 font-sans">
-    <div class="flex h-screen overflow-hidden">
-        <aside class="w-64 bg-[#1e293b] border-r border-slate-700 flex flex-col">
-            <div class="p-6 text-xl font-bold text-blue-400 flex items-center">
-                <i class="fas fa-terminal mr-3"></i> Zenith Core
-            </div>
-            <nav class="flex-1 px-4 space-y-2">
-                <button onclick="showSection('dash')" class="w-full flex items-center p-3 hover:bg-slate-700 rounded-lg transition"><i class="fas fa-chart-line w-8"></i> Дашборд</button>
-                <button onclick="showSection('users')" class="w-full flex items-center p-3 hover:bg-slate-700 rounded-lg transition"><i class="fas fa-users w-8"></i> Пользователи</button>
-                <button onclick="showSection('modules')" class="w-full flex items-center p-3 hover:bg-slate-700 rounded-lg transition"><i class="fas fa-cubes w-8"></i> Модули</button>
-                <button onclick="showSection('logs')" class="w-full flex items-center p-3 hover:bg-slate-700 rounded-lg transition"><i class="fas fa-list-ul w-8"></i> Системные логи</button>
+<body class="bg-[#0f172a] text-slate-200">
+    <div class="flex h-screen">
+        <aside class="w-64 bg-[#1e293b] border-r border-slate-700 p-6 flex flex-col">
+            <div class="text-xl font-bold text-blue-400 mb-8"><i class="fas fa-terminal mr-2"></i>ZenithCore</div>
+            <nav class="space-y-3 flex-1">
+                <button onclick="show('dash')" class="block w-full text-left p-2 hover:bg-slate-700 rounded"><i class="fas fa-chart-pie mr-2"></i> Дашборд</button>
+                <button onclick="show('photo')" class="block w-full text-left p-2 hover:bg-slate-700 rounded"><i class="fas fa-image mr-2"></i> Фото-Модуль</button>
+                <button onclick="show('logs')" class="block w-full text-left p-2 hover:bg-slate-700 rounded"><i class="fas fa-list mr-2"></i> Логи</button>
             </nav>
+            <a href="/api/logout" class="text-red-400 hover:underline mt-auto">Выйти</a>
         </aside>
 
-        <main class="flex-1 overflow-y-auto p-8">
-            <section id="sec-dash" class="content-sec">
-                <h2 class="text-3xl font-bold mb-8">Мониторинг сервера</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="bg-[#1e293b] p-6 rounded-xl border border-slate-700">
-                        <p class="text-slate-400 mb-1 text-sm uppercase">Процессор</p>
-                        <p id="cpu-val" class="text-3xl font-mono text-green-400">0%</p>
+        <main class="flex-1 p-10 overflow-y-auto">
+            <section id="sec-dash" class="tab">
+                <h2 class="text-2xl mb-6 font-bold">Мониторинг</h2>
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 text-center">
+                        <p class="text-slate-400">CPU</p>
+                        <p id="cpu" class="text-3xl text-green-400 font-mono">0%</p>
                     </div>
-                    <div class="bg-[#1e293b] p-6 rounded-xl border border-slate-700">
-                        <p class="text-slate-400 mb-1 text-sm uppercase">Память (RAM)</p>
-                        <p id="ram-val" class="text-3xl font-mono text-blue-400">0%</p>
-                    </div>
-                    <div class="bg-[#1e293b] p-6 rounded-xl border border-slate-700">
-                        <p class="text-slate-400 mb-1 text-sm uppercase">Диск</p>
-                        <p id="disk-val" class="text-3xl font-mono text-yellow-400">0%</p>
-                    </div>
-                    <div class="bg-[#1e293b] p-6 rounded-xl border border-slate-700">
-                        <p class="text-slate-400 mb-1 text-sm uppercase">Сеть</p>
-                        <p id="net-val" class="text-3xl font-mono text-purple-400">0 KB/s</p>
+                    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 text-center">
+                        <p class="text-slate-400">RAM</p>
+                        <p id="ram" class="text-3xl text-blue-400 font-mono">0%</p>
                     </div>
                 </div>
             </section>
 
-            <section id="sec-users" class="content-sec hidden">
-                <h2 class="text-3xl font-bold mb-8">Управление доступом</h2>
-                <div class="bg-[#1e293b] rounded-xl p-6 border border-slate-700">
-                    <div class="mb-6 flex gap-4">
-                        <input id="u-name" type="text" placeholder="Имя пользователя" class="bg-slate-800 border border-slate-600 p-2 rounded flex-1">
-                        <select id="u-role" class="bg-slate-800 border border-slate-600 p-2 rounded text-white">
-                            <option value="admin">Admin</option>
-                            <option value="user">User</option>
-                        </select>
-                        <button onclick="addUser()" class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded font-bold">Добавить</button>
-                    </div>
-                    <table class="w-full text-left">
-                        <thead><tr class="border-b border-slate-700 text-slate-400"><th class="pb-3">ID</th><th class="pb-3">Имя</th><th class="pb-3">Роль</th><th class="pb-3">Действие</th></tr></thead>
-                        <tbody id="user-list"></tbody>
-                    </table>
+            <section id="sec-photo" class="tab hidden">
+                <h2 class="text-2xl mb-6 font-bold">Анонимная Галерея</h2>
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                    <input type="file" id="img-file" class="mb-4 text-sm">
+                    <button onclick="upPhoto()" class="bg-blue-600 px-4 py-1 rounded">Загрузить в облако</button>
+                    <div id="gallery" class="grid grid-cols-4 gap-4 mt-8"></div>
                 </div>
             </section>
 
-            <section id="sec-modules" class="content-sec hidden">
-                <h2 class="text-3xl font-bold mb-8">Менеджер модулей</h2>
-                <div class="grid grid-cols-2 gap-8">
-                    <div class="bg-[#1e293b] p-6 rounded-xl border border-slate-700">
-                        <h3 class="text-xl mb-4 text-blue-400">Загрузить ZIP</h3>
-                        <input type="file" id="zip-file" class="block w-full text-sm text-slate-400 mb-4 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer">
-                        <button onclick="uploadZip()" class="w-full py-2 bg-slate-700 rounded hover:bg-slate-600">Установить</button>
-                    </div>
-                    <div class="bg-[#1e293b] p-6 rounded-xl border border-slate-700 opacity-50">
-                        <h3 class="text-xl mb-4 text-orange-400">GitHub Link (Soon)</h3>
-                        <input type="text" disabled placeholder="https://github.com/..." class="bg-slate-800 border border-slate-600 p-2 rounded w-full mb-4">
-                        <button disabled class="w-full py-2 bg-slate-800 rounded">Клонировать</button>
-                    </div>
-                </div>
-            </section>
-
-            <section id="sec-logs" class="content-sec hidden">
-                <h2 class="text-3xl font-bold mb-8">Логи системы</h2>
-                <div id="log-container" class="bg-black p-6 rounded-xl font-mono text-sm h-96 overflow-y-auto text-green-500 border border-slate-700">
-                    <div>Загрузка логов...</div>
-                </div>
+            <section id="sec-logs" class="tab hidden">
+                <h2 class="text-2xl mb-6 font-bold">Логи</h2>
+                <div id="log-box" class="bg-black p-4 font-mono text-green-500 h-80 overflow-y-auto rounded shadow-inner"></div>
             </section>
         </main>
     </div>
 
     <script>
-        function showSection(id) {
-            document.querySelectorAll('.content-sec').forEach(s => s.classList.add('hidden'));
+        function show(id) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.add('hidden'));
             document.getElementById('sec-'+id).classList.remove('hidden');
-            if(id === 'users') loadUsers();
+            if(id === 'photo') loadPhotos();
             if(id === 'logs') loadLogs();
         }
 
         async function updateStats() {
-            const r = await fetch('/api/stats');
-            const d = await r.json();
-            document.getElementById('cpu-val').innerText = d.cpu + '%';
-            document.getElementById('ram-val').innerText = d.ram + '%';
-            document.getElementById('disk-val').innerText = d.disk + '%';
-            document.getElementById('net-val').innerText = d.net;
+            const res = await fetch('/api/stats');
+            const d = await res.json();
+            document.getElementById('cpu').innerText = d.cpu + '%';
+            document.getElementById('ram').innerText = d.ram + '%';
+        }
+        setInterval(updateStats, 2000);
+
+        async function upPhoto() {
+            const file = document.getElementById('img-file').files[0];
+            const formData = new FormData();
+            formData.append("file", file);
+            await fetch('/api/photos/upload', {method: 'POST', body: formData});
+            loadPhotos();
         }
 
-        async function loadUsers() {
-            const r = await fetch('/api/users');
-            const data = await r.json();
-            document.getElementById('user-list').innerHTML = data.map(u => `
-                <tr class="border-b border-slate-800">
-                    <td class="py-4 text-slate-500">${u.id}</td>
-                    <td class="py-4 font-bold">${u.username}</td>
-                    <td class="py-4 text-blue-400">${u.role}</td>
-                    <td class="py-4"><button onclick="delUser('${u.id}')" class="text-red-500 hover:text-red-400">Удалить</button></td>
-                </tr>
+        async function loadPhotos() {
+            const res = await fetch('/api/photos/list');
+            const data = await res.json();
+            document.getElementById('gallery').innerHTML = data.map(url => `
+                <div class="bg-slate-700 p-1 rounded">
+                    <img src="${url}" class="w-full h-32 object-cover rounded">
+                    <p class="text-[10px] truncate mt-1">${url}</p>
+                </div>
             `).join('');
         }
 
-        async function addUser() {
-            const name = document.getElementById('u-name').value;
-            const role = document.getElementById('u-role').value;
-            await fetch('/api/users', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({username: name, role: role})
-            });
-            loadUsers();
-        }
-
         async function loadLogs() {
-            const r = await fetch('/api/logs');
-            const data = await r.json();
-            document.getElementById('log-container').innerHTML = data.map(l => `<div>${l.entry}</div>`).join('');
+            const res = await fetch('/api/logs');
+            const data = await res.json();
+            document.getElementById('log-box').innerHTML = data.map(l => `<div>> ${l.entry}</div>`).join('');
         }
-
-        setInterval(updateStats, 2000);
     </script>
 </body>
 </html>
