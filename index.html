@@ -7,47 +7,66 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body class="bg-[#0b0f1a] text-slate-300">
-    <div class="flex h-screen">
+    <div class="flex h-screen overflow-hidden">
         <aside class="w-64 bg-[#111827] border-r border-slate-800 p-6 flex flex-col">
-            <div class="text-blue-500 font-bold text-xl mb-10">ZENITH CORE</div>
-            <nav id="menu" class="space-y-2 flex-1">
-                <button onclick="show('dash')" class="w-full text-left p-3 hover:bg-slate-800 rounded-lg shadow-sm"><i class="fas fa-home mr-3"></i>Дашборд</button>
+            <div class="text-blue-500 font-bold text-xl mb-10 font-mono italic text-center">ZENITH CORE</div>
+            <nav id="menu" class="space-y-1 flex-1">
+                <button onclick="show('dash')" class="w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-home mr-3"></i>Дашборд</button>
+                <button onclick="show('users')" class="w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-users mr-3"></i>Пользователи</button>
+                <button onclick="show('logs')" class="w-full text-left p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-terminal mr-3"></i>Логи</button>
+                <div class="border-t border-slate-800 my-4 pt-4 text-xs text-slate-500 px-3 uppercase">Модули</div>
                 </nav>
-            <div class="pt-4 border-t border-slate-800">
-                <button onclick="show('install')" class="w-full text-left p-3 text-green-500 hover:bg-slate-800 rounded-lg"><i class="fas fa-plus-circle mr-3"></i>Установить ZIP</button>
-            </div>
+            <button onclick="show('install')" class="mt-4 w-full bg-slate-800 p-3 rounded-lg text-green-500 text-sm font-bold border border-green-900/30"><i class="fas fa-plus mr-2"></i>Добавить модуль</button>
         </aside>
 
         <main class="flex-1 p-10 overflow-auto">
             <div id="view-dash" class="view">
-                <h2 class="text-3xl font-bold mb-8">Дашборд</h2>
-                <div id="widgets" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-[#161e2d] p-6 rounded-2xl border border-slate-800">
-                        <p class="text-slate-500 text-xs uppercase font-bold">Система</p>
-                        <div class="mt-4 space-y-2">
-                            <p>CPU: <span id="cpu" class="text-green-400">0%</span></p>
-                            <p>RAM: <span id="ram" class="text-blue-400">0%</span></p>
-                        </div>
+                <h2 class="text-3xl font-bold mb-8">Система</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                        <p class="text-slate-500 text-[10px] uppercase font-bold mb-3">CPU Usage</p>
+                        <p id="cpu" class="text-3xl font-mono text-green-400">0%</p>
                     </div>
+                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                        <p class="text-slate-500 text-[10px] uppercase font-bold mb-3">Memory RAM</p>
+                        <p id="ram" class="text-3xl font-mono text-blue-400">0%</p>
                     </div>
+                </div>
+                <h2 class="text-xl font-bold mb-6 text-slate-500">Виджеты модулей</h2>
+                <div id="custom-widgets" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    </div>
+            </div>
+
+            <div id="view-users" class="view hidden">
+                <h2 class="text-3xl font-bold mb-8">Пользователи</h2>
+                <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                    <p class="text-slate-500 italic">Функция редактирования в разработке...</p>
+                </div>
+            </div>
+
+            <div id="view-logs" class="view hidden">
+                <h2 class="text-3xl font-bold mb-8">События</h2>
+                <div id="log-list" class="bg-black p-6 rounded-xl font-mono text-green-600 text-sm border border-slate-800 h-96 overflow-auto"></div>
             </div>
 
             <div id="view-install" class="view hidden">
-                <h2 class="text-3xl font-bold mb-8">Установка нового модуля</h2>
-                <input type="file" id="zip-input" class="mb-4 block">
-                <button onclick="installModule()" class="bg-blue-600 px-10 py-3 rounded-xl font-bold">Загрузить архив</button>
+                <h2 class="text-3xl font-bold mb-8 text-green-500 text-center">Установка ZIP модуля</h2>
+                <div class="max-w-md mx-auto bg-slate-900 p-10 rounded-3xl border-2 border-dashed border-slate-700 text-center">
+                    <i class="fas fa-file-zipper text-6xl text-slate-700 mb-6"></i>
+                    <input type="file" id="zip-input" class="block w-full text-sm mb-6">
+                    <button onclick="installModule()" class="bg-green-600 w-full py-4 rounded-2xl font-bold text-white shadow-lg hover:bg-green-500 transition">УСТАНОВИТЬ</button>
+                </div>
             </div>
 
-            <div id="module-container" class="view hidden">
-                </div>
+            <div id="module-view" class="view hidden">
+                <div id="module-container"></div>
+            </div>
         </main>
     </div>
 
     <script>
-        let modules = [];
-
         async function init() {
-            // 1. Загружаем статистику
+            // Stats
             setInterval(async () => {
                 const r = await fetch('/api/stats');
                 const d = await r.json();
@@ -55,24 +74,26 @@
                 document.getElementById('ram').innerText = d.ram + '%';
             }, 2000);
 
-            // 2. Загружаем список модулей и строим меню
+            // Load Modules
             const res = await fetch('/api/modules/list');
-            modules = await res.json();
+            const mods = await res.json();
             const menu = document.getElementById('menu');
-            
-            modules.forEach(m => {
-                const btn = document.createElement('button');
-                btn.className = "w-full text-left p-3 hover:bg-slate-800 rounded-lg transition";
-                btn.innerHTML = `<i class="${m.icon} mr-3"></i>${m.name}`;
-                btn.onclick = () => loadModule(m);
-                menu.appendChild(btn);
+            const widgetBox = document.getElementById('custom-widgets');
 
-                // Если у модуля есть виджет, добавляем на Дашборд
+            mods.forEach(m => {
+                // Button
+                const b = document.createElement('button');
+                b.className = "w-full text-left p-3 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition";
+                b.innerHTML = `<i class="${m.icon} mr-3"></i>${m.name}`;
+                b.onclick = () => loadModule(m);
+                menu.appendChild(b);
+
+                // Widget
                 if(m.widget_html) {
                     const w = document.createElement('div');
-                    w.className = "bg-[#161e2d] p-6 rounded-2xl border border-slate-800";
+                    w.className = "bg-slate-900 p-6 rounded-2xl border border-slate-800 border-t-4 border-t-blue-500";
                     w.innerHTML = m.widget_html;
-                    document.getElementById('widgets').appendChild(w);
+                    widgetBox.appendChild(w);
                 }
             });
         }
@@ -80,14 +101,19 @@
         function show(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
             document.getElementById('view-' + id).classList.remove('hidden');
+            if(id === 'logs') loadLogs();
         }
 
         function loadModule(m) {
-            show('container');
-            const container = document.getElementById('module-container');
-            container.innerHTML = `<h2 class="text-3xl font-bold mb-8">${m.name}</h2>` + m.main_html;
-            // Исполняем скрипты модуля, если они есть
+            show('module-view');
+            document.getElementById('module-container').innerHTML = `<h2 class="text-3xl font-bold mb-8">${m.name}</h2>` + m.main_html;
             if(m.script) eval(m.script);
+        }
+
+        async function loadLogs() {
+            const r = await fetch('/api/logs');
+            const d = await r.json();
+            document.getElementById('log-list').innerHTML = d.reverse().map(l => `<div>[${new Date().toLocaleTimeString()}] ${l.entry}</div>`).join('');
         }
 
         async function installModule() {
